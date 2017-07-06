@@ -23,3 +23,4 @@ As an example there is simple Generator plugin that enables HTTP access to Photo
 - Documents (list, change active, close)
 - Layer metadata (bounds, children, etc.)
 - Layer content 
+

@@ -1,6 +1,6 @@
 {
 	"name": "photoshop-generator-core",
-	"version": "3.7.6",
+	"version": "3.7.7",
 	"description": "Module for creating Photoshop Generator plugins",
 	"main": "generator_core.js",
 	"keywords": [
