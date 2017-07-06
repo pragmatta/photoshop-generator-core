@@ -3,6 +3,9 @@
 ## Introduction
 This is a wrapper module for Photoshop Generator, an Adobe Node.js based extension technology for Photoshop, which allows a real time updates and export of changes in a PSD-file.
 
+For more information about creatin Photoshop plugins see
+https://github.com/adobe-photoshop/generator-core/wiki/JSON-event-format
+
 Package photoshop-generator-core functions as a wrapper for the Generator APIs delivering
 - An abstraction for the internal data types 
 - Cache and an easy access for layer data
@@ -15,12 +18,22 @@ Package photoshop-generator-core functions as a wrapper for the Generator APIs d
   - Operating system
   - HTTP methods
 
-## Documentation
+## API Documentation
+Photoshop Generator Core offers the following method collections for interacting with Photoshop
+- [**plugin**](documentation/module-plugin.html)
 
 
 ## Sample Plugin
 As an example there is simple Generator plugin that enables HTTP access to Photoshop:
-- Documents (list, change active, close)
+- Open documents (list, change active, close)
 - Layer metadata (bounds, children, etc.)
 - Layer content 
+
+To deploy the sample plugin 
+1) Save generator_sample.js in a new folder 
+2) Install the module in the folder ('npm install photoshop-generator-core')
+3) Copy folder to $Photoshop/Plug-ins/Generator
+4) Start Photoshop and open a document
+5) Open http://localhost:8083/ in a browser
+
 
