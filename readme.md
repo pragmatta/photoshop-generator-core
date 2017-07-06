@@ -4,7 +4,7 @@
 This is a wrapper module for Photoshop Generator, an Adobe Node.js based extension technology for Photoshop, which allows a real time updates and export of changes in a PSD-file.
 
 For more information about creatin Photoshop plugins see
-https://github.com/adobe-photoshop/generator-core/wiki/JSON-event-format
+https://github.com/adobe-photoshop/generator-core
 
 Package photoshop-generator-core functions as a wrapper for the Generator APIs delivering
 - An abstraction for the internal data types 
