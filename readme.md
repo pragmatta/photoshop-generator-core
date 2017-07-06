@@ -20,7 +20,7 @@ Package photoshop-generator-core functions as a wrapper for the Generator APIs d
 
 ## API Documentation
 Photoshop Generator Core offers the following method collections for interacting with Photoshop
-- [**plugin**](documentation/module-plugin.html)
+- [**plugin**](http://htmlpreview.github.com/RationalMatta/photoshop-generator-core/documentation/module-plugin.html)
 
 
 ## Sample Plugin
