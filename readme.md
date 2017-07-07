@@ -36,16 +36,6 @@ Photoshop Generator Core offers the following method collections for interacting
 - [**util**](https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_util): utility functions
 
 ## Sample Plugin
-As an example there is simple Generator plugin that enables HTTP access to Photoshop:
-- Open documents (list, change active, close)
-- Layer metadata (bounds, children, etc.)
-- Layer content 
-
-To deploy the sample plugin 
-1) Save generator_sample.js in a new folder 
-2) Install the module in the folder ('npm install photoshop-generator-core')
-3) Copy folder to $Photoshop/Plug-ins/Generator
-4) Start Photoshop and open a document
-5) Open http://localhost:8083/ in a browser
-
-
+There is sample Generator plugin about using photoshop-generator-core that enables HTTP access to Photoshop:
+- Github: https://github.com/RationalMatta/photoshop-generator-sample
+- NPM: https://www.npmjs.com/package/photoshop-generator-sample

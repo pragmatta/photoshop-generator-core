@@ -134,9 +134,9 @@ var Generator = {
 
             Generator._package = require('./package.json')
             Generator._os = require("os")
-			Generator._url = require("url")
-			Generator._http = require("http")
-			Generator._https = require("https")
+            Generator._url = require("url")
+            Generator._http = require("http")
+            Generator._https = require("https")
             Generator._https.globalAgent.options.secureProtocol = "TLSv1_method" //'SSLv3_method';
             Generator._cryptography = require("crypto")
             Generator._processes = require('child_process')
@@ -147,9 +147,9 @@ var Generator = {
             Generator._png = require('pngjs').PNG
             Generator._gif = require('gif-encoder')
 
-			Generator._instance = generator_instance
-			Generator._config = generator_config
-			Generator._sessionid = Generator.utilRandomId()
+            Generator._instance = generator_instance
+            Generator._config = generator_config
+            Generator._sessionid = Generator.utilRandomId()
             Generator._packageversion = Generator._package.version.split('.')
 
             Generator._setPluginId(app_id)
