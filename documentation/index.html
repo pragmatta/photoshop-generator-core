@@ -44,8 +44,8 @@
 
     <section>
         <article><h1>Photoshop Generator Core</h1><h2>Introduction</h2><p>This is a wrapper module for Photoshop Generator, an Adobe Node.js based extension technology for Photoshop, which allows a real time updates and export of changes in a PSD-file.</p>
-<p>For more information about creatin Photoshop plugins see
-https://github.com/adobe-photoshop/generator-core/wiki/JSON-event-format</p>
+<p>For more information about creating Photoshop plugins see
+https://github.com/adobe-photoshop/generator-core</p>
 <p>Package photoshop-generator-core functions as a wrapper for the Generator APIs delivering</p>
 <ul>
 <li>An abstraction for the internal data types </li>
@@ -63,20 +63,38 @@ https://github.com/adobe-photoshop/generator-core/wiki/JSON-event-format</p>
 </ul>
 <h2>API Documentation</h2><p>Photoshop Generator Core offers the following method collections for interacting with Photoshop</p>
 <ul>
-<li><a href="documentation/module-plugin.html"><strong>plugin</strong></a></li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_plugin"><strong>plugin</strong></a>: configure and manage plugin</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_photoshop"><strong>photoshop</strong></a>: interact with Photoshop</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_layer"><strong>layer</strong></a>: access Photoshop layers</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_document"><strong>document</strong></a>: access Photoshop documents</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_delta"><strong>delta</strong></a>: helper functions for testing what changes have occured</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_server"><strong>server</strong></a>: create a local webserver to interact with Photoshop panels </li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_file"><strong>file</strong></a>: access filesystem files</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_directory"><strong>directory</strong></a>: access filesystem directories</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_http"><strong>http</strong></a>: make http requests</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_system"><strong>system</strong></a>: access operating system </li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_json"><strong>json</strong></a>: JSON encode/decode</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_log"><strong>log</strong></a>: logging</li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_png"><strong>png</strong></a>: export layer content as PNG's </li>
+<li><a href="https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_util"><strong>util</strong></a>: utility functions</li>
 </ul>
-<h2>Sample Plugin</h2><p>As an example there is simple Generator plugin that enables HTTP access to Photoshop:</p>
+<h2>Sample Plugin</h2><p>There is sample Generator plugin about using photoshop-generator-core that enables HTTP access to Photoshop:</p>
 <ul>
-<li>Open documents (list, change active, close)</li>
-<li>Layer metadata (bounds, children, etc.)</li>
-<li>Layer content </li>
+<li>Github: https://github.com/RationalMatta/photoshop-generator-sample</li>
+<li>NPM: https://www.npmjs.com/package/photoshop-generator-sample</li>
 </ul>
-<p>To deploy the sample plugin 
-1) Save generator_sample.js in a new folder 
-2) Install the module in the folder ('npm install photoshop-generator-core')
-3) Copy folder to $Photoshop/Plug-ins/Generator
-4) Start Photoshop and open a document
-5) Open http://localhost:8083/ in a browser</p></article>
+<h2>Changelog</h2><h3>v4.01</h3><p>V4.0.1 is a backwards incompatible change to v3.x and will require code changes</p>
+<ul>
+<li>Changed the format of the serverSetRequestHandler callback to support body data and different kinds API structures. The new callback gets following parameters:<ul>
+<li>Path: Array of strings of the request path split by '/'</li>
+<li>Params: Object of the URL-parameters</li>
+<li>Body: HTTP body data</li>
+<li>Request: http.ClientRequest Node-object</li>
+<li>Response: http.ServerResponse Node-object</li>
+</ul>
+</li>
+<li>Changed layer UID-format from the simple &quot;DOC_ID:LAYER_ID&quot; to a proper URNs &quot;document:DOC_ID&quot; and &quot;layer:DOC_ID:LAYER_ID&quot;</li>
+</ul></article>
     </section>
 
 
@@ -93,7 +111,7 @@ https://github.com/adobe-photoshop/generator-core/wiki/JSON-event-format</p>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Jul 06 2017 17:05:37 GMT+0300 (FLE Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Mon Feb 19 2018 20:38:16 GMT+0200 (FLE Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
