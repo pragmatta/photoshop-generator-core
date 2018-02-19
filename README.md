@@ -39,3 +39,14 @@ Photoshop Generator Core offers the following method collections for interacting
 There is sample Generator plugin about using photoshop-generator-core that enables HTTP access to Photoshop:
 - Github: https://github.com/RationalMatta/photoshop-generator-sample
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
+
+## Changelog
+### v4.01
+V4.0.1 is a backwards incompatible change to v3.x and will require code changes
+- Changed the format of the serverSetRequestHandler callback to support body data and different kinds API structures. The new callback gets following parameters:
+ - Path: Array of strings of the request path split by '/'
+ - Params: Object of the URL-parameters
+ - Body: HTTP body data
+ - Request: http.ClientRequest Node-object
+ - Response: http.ServerResponse Node-object
+- Changed layer UID-format from the simple "DOC_ID:LAYER_ID" to a proper URNs "document:DOC_ID" and "layer:DOC_ID:LAYER_ID"
