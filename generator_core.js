@@ -22,6 +22,8 @@ var Generator = {
     _layerSettingsData: {},
     _selectedLayer: {},
     _documentUpdatePending: {},
+    _serverHandlers: {},
+    _serverRequestBody: "",
 
     _photoshopEventHandlers: {
         Asrt: "_onAssertFail", 
@@ -343,6 +345,30 @@ var Generator = {
             return Generator._progress[task]
         }
     },    
+    _initializeServerWithPort: function (server, port) {
+        // Generator.logDebug("_serverCreate", "port="+port)
+        if (!server) {
+            server = Generator._http.createServer()
+            server.on('request', function (req, res) {
+                Generator._serverRequestBody = [];
+                req.on('data', function (data) {
+                    Generator._serverRequestBody.push(data);
+                    // Generator.logDebug("server @ data", "new data="+data)
+                });
+                req.on('end', function () {
+                    Generator._serverRequestBody = Buffer.concat(Generator._serverRequestBody).toString();
+                    // Generator.logDebug("server @ end", "data="+Generator._serverRequestBody)
+                    Generator._onServerRequest(req, res)
+                });
+            });
+        }
+        if (server.listening) {
+            server.close(function () { server.listen(port) })
+        } else {
+            server.listen(port)
+        }
+        return server
+    },
     /**
      * @module server
      */
@@ -350,14 +376,7 @@ var Generator = {
         if (port && typeof port == "number" && port >= 1 && port < 65536 && port != Generator._serverPort) {
             Generator.logDebug("_setServerPrimaryPort", "new port="+port)
             Generator._serverPort = port
-            if (!Generator._server) {
-                Generator._server = Generator._http.createServer(Generator._onServerRequest)
-            }
-            if (Generator._server.listening) {
-                Generator._server.close(function () { Generator._server.listen(Generator._serverPort) })
-            } else {
-                Generator._server.listen(Generator._serverPort)
-            }
+            Generator._server = Generator._initializeServerWithPort(Generator._server, Generator._serverPort)
         }
     },
     /**
@@ -381,18 +400,7 @@ var Generator = {
         if (port && typeof port == "number" && port >= 1 && port < 65536 && port != Generator._serverCustomPort && port != Generator._serverPort) {
             Generator.logDebug("serverSetSecondaryPort", "new port="+port)
             Generator._serverCustomPort = port
-            if (!Generator._serverCustom) {
-                Generator._serverCustom = Generator._http.createServer(Generator._onServerRequest)
-            }
-            if (Generator._serverCustom.listening) {
-                Generator._serverCustom.close(
-                    function () { 
-                        Generator.logDebug("serverSetSecondaryPort", "old port closed")
-                        Generator._serverCustom.listen(Generator._serverCustomPort) 
-                    })
-            } else {
-                Generator._serverCustom.listen(Generator._serverCustomPort)
-            }
+            Generator._serverCustom = Generator._initializeServerWithPort(Generator._serverCustom, Generator._serverCustomPort)
         }
     },
     /**
@@ -404,7 +412,6 @@ var Generator = {
     serverGetSecondaryPort: function () {
         return Generator._serverCustomPort
     },
-    _serverHandlers: {},
     /**
      * Set server handler for a service
      * @param {string} service Name of the service
@@ -430,7 +437,11 @@ var Generator = {
         var start = Generator.pluginGetTimestamp()
         var url = Generator._url.parse(request.url, true, true)
         var params = url.query
-        var operation = Generator._parseOperation(url.pathname)
+        var request_path = url.pathname.split('/');
+        if (url.pathname[0]=='/')
+            request_path.shift();
+        Generator.logDebug("_onServerRequest", "path=" + url.pathname + ", path_parts=" +request_path )
+
         response.setHeader("Access-Control-Allow-Origin", "*") // needed for browser debugging
         if (Generator._serverValidator && !Generator._serverValidator(request)) {
             response.writeHead(403, 'Invalid request', {'Content-Type': 'text/plain'})
@@ -443,9 +454,9 @@ var Generator = {
             Generator.logDebug("_onServerRequest", "invalid session, id="+Generator._sessionid+", parameter="+params.sessionid)
 
         } else {
-            var handler = Generator._serverHandlers[operation.service]
+            var handler = Generator._serverHandlers[request_path[0]]
             if (handler) {
-                var result = handler(operation, params, request, response)
+                var result = handler(request_path, params, Generator._serverRequestBody, request, response)
                 if (result != null) { // null response means async operation and handler will write the response
                     response.statusCode = 200
                     if (typeof(result) == "object") {
@@ -581,17 +592,16 @@ var Generator = {
         }
         return Generator._tmpdirectory
     },
-    _parseOperation: function(path) {
-        var parts = path.split("/")
-        if (parts.length >= 2) {
-            return { service: parts[1], id: parts[2], method: parts[3] }
-        }
-    },
     /**
      * @module layer
      */
     layerCalculateUid: function (doc_id, layer_id) {
-        return (doc_id||"")+":"+(layer_id||"")
+		if (doc_id == null)
+			return ""
+		else if (layer_id == null)
+			return "document:"+doc_id
+		else
+			return "layer:"+doc_id+":"+layer_id
     },
     /**
      * Get the layer preferences for this plugin
@@ -918,11 +928,9 @@ var Generator = {
      * @memberof module:layer
      */
     layerGetById: function (doc_id, layer_id) {
-        if (doc_id == layer_id) {
-            return Generator.layerGetByUid(doc_id)
-        } else {
-            return Generator.layerGetByUid(Generator.layerCalculateUid(doc_id, layer_id))
-        }
+        if (doc_id == layer_id)
+            layer_id = null
+        return Generator.layerGetByUid(Generator.layerCalculateUid(doc_id, layer_id))
     },
     /**
      * Get a child layer by the index
@@ -966,7 +974,7 @@ var Generator = {
         }
     },
     /**
-     * Get a layer UID
+     * Get a layer ID
      * @param {Object} layer Layer-object
      *
      * @return {string}
@@ -2668,7 +2676,7 @@ var Generator = {
         data.name = Generator.fileSanitizeName(data.file)
         data._path = Generator.fileSanitizePath(data.file)
         data._url = "//"+data.name+"/"
-        data._uid = data.id
+        data._uid = Generator.layerCalculateUid(data.id, null)
         data._settings = Generator._layerGetPluginSettings(data, Generator._pluginid)
         data._children = []
         data._deltas = {}
