@@ -41,6 +41,9 @@ There is sample Generator plugin about using photoshop-generator-core that enabl
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
 
 ## Changelog
+### v4.1.0
+- New methods layerGetNextLayer and layerGetPreviousLayer for finding the next/previous entry in the layer list
+
 ### v4.01
 V4.0.1 is a backwards incompatible change to v3.x and will require code changes
 - Changed the format of the serverSetRequestHandler callback to support body data and different kinds API structures. The new callback gets following parameters:

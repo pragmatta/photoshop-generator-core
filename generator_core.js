@@ -919,6 +919,58 @@ var Generator = {
         }
     },
     /**
+     * Get the next layer from the given layer, same layer if the last layer of the document
+     * @param {Object} layer reference layer
+     *
+     * @return {Object}
+     *
+     * @memberof module:layer
+     */
+    layerGetNextLayer: function (layer) {
+        if (layer) {
+            var doc_index = Generator._layerOrderIndex[layer._document.id]
+            if (doc_index) {
+                var layer_index = layer.index+1
+                // Generator.logDebug("layerGetNextLayer", "index=" + layer_index)
+                while (layer_index < doc_index.length && !doc_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
+                    Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+                    // layer_index++
+                }
+
+                if (doc_index[layer_index])
+                    return doc_index[layer_index]
+                else
+                    return layer // if no previous found, original was last
+            }
+        }
+    },
+    /**
+     * Get the previous layer from the given layer, same layer if the first layer of the document
+     * @param {Object} layer reference layer
+     *
+     * @return {Object}
+     *
+     * @memberof module:layer
+     */
+    layerGetPreviousLayer: function (layer) {
+        if (layer) {
+            var doc_index = Generator._layerOrderIndex[layer._document.id]
+            if (doc_index) {
+                var layer_index = layer.index-1
+                // Generator.logDebug("layerGetPreviousLayer", "index=" + layer_index)
+                while (layer_index >= 0 && !doc_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
+                    // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+                    layer_index--
+                }
+
+                if (doc_index[layer_index])
+                    return doc_index[layer_index]
+                else
+                    return layer // if no previous found, original was first
+            }
+        }
+    },
+    /**
      * Get a layer from a document by id
      * @param {Object} doc_id id of the document of the layer
      * @param {string} layer_id id of the layer
