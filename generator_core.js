@@ -440,7 +440,7 @@ var Generator = {
         var request_path = url.pathname.split('/');
         if (url.pathname[0]=='/')
             request_path.shift();
-        Generator.logDebug("_onServerRequest", "path=" + url.pathname + ", path_parts=" +request_path )
+        // Generator.logDebug("_onServerRequest", "path=" + url.pathname + ", path_parts=" +request_path )
 
         response.setHeader("Access-Control-Allow-Origin", "*") // needed for browser debugging
         if (Generator._serverValidator && !Generator._serverValidator(request)) {
@@ -1664,7 +1664,7 @@ var Generator = {
         // Generator.logDebug("photoshopExecuteScript", "script="+str)
         Generator._instance.evaluateJSXString(str).then(
             function(result){
-                Generator.logDebug("photoshopExecuteScript", "result="+result)
+                // Generator.logDebug("photoshopExecuteScript", "result="+result)
                 if (callback) { callback(result) }
             },
             function(err){
