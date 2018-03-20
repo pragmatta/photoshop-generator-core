@@ -18,7 +18,7 @@ Package photoshop-generator-core functions as a wrapper for the Generator APIs d
   - Operating system
   - HTTP methods
 
-## API Documentation
+## Documentation
 Photoshop Generator Core offers the following method collections for interacting with Photoshop
 - [**plugin**](https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_plugin): configure and manage plugin
 - [**photoshop**](https://github.com/RationalMatta/photoshop-generator-core/tree/master/documentation#module_photoshop): interact with Photoshop
@@ -41,9 +41,10 @@ There is sample Generator plugin about using photoshop-generator-core that enabl
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
 
 ## Changelog
-### v4.1.1
+### v4.1.3
 - New methods layerGetNextLayer and layerGetPreviousLayer for finding the next/previous entry in the layer list
 - Cleaned up debug printing
+- Fixed layerdata indexing (e.g. used by layerGetByIndex)
 
 ### v4.01
 V4.0.1 is a backwards incompatible change to v3.x and will require code changes

@@ -961,8 +961,8 @@ var Generator = {
                 var layer_index = layer.index+1
                 // Generator.logDebug("layerGetNextLayer", "index=" + layer_index)
                 while (layer_index &lt; doc_index.length &amp;&amp; !doc_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
-                    Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
-                    // layer_index++
+                    // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+                    layer_index++
                 }
 
                 if (doc_index[layer_index])
@@ -2798,7 +2798,8 @@ var Generator = {
         Generator._layerUrlIndex[layer._url] = layer
         Generator._layerDataIndex[layer._uid] = layer
         Generator._layerUpdateOrderIndex(layer)
-        // Generator._layerOrderIndex[doc.id][layer.index] = layer
+        Generator._layerOrderIndex[doc.id][layer.index] = layer
+		// Generator.logDebug("_parseLayerData", "layer_id="+layer._uid+", index="+layer.index)
 
         // ._url must be set calculation in children will go OK         
         if (layer.layers) {
