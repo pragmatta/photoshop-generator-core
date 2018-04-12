@@ -44,8 +44,7 @@ var Generator = {
     _progressCallbacks: {},
 
     _documents: {},
-    _layerDataIndex: {},
-    _layerOrderIndex: {},
+    _layerUidIndex: {},
     _layerUrlIndex: {},
     _layerSettingsData: {},
     _selectedLayer: {},
@@ -656,6 +655,18 @@ var Generator = {
         Generator._layerSetPluginSettings(layer, preferences, Generator._pluginid)
     },
     /**
+     * Get the layer depth in the document hierarchy with doc = 0, root layers = 1, etc.
+     * @param {Object} layer Layer-object
+     *
+     * @return {number}
+     *
+     * @memberof module:layer
+     */
+    layerGetDepth: function (layer) {
+        if (layer)
+            return layer._depth
+    },
+    /**
      * Get the layer width
      * @param {Object} layer Layer-object
      *
@@ -938,12 +949,10 @@ var Generator = {
      * @memberof module:layer
      */
     layerGetByIndex: function (doc_id, layer_index) {
-        if (doc_id &amp;&amp; (layer_index || layer_index === 0)) {
+        var doc = Generator.documentGetById(doc_id)
+        if (doc &amp;&amp; (layer_index || layer_index === 0)) {
             // Generator.logDebug("layerGetByIndex", "index=" + layer_index+", doc_id="+doc_id)
-            var doc_index = Generator._layerOrderIndex[doc_id]
-            if (doc_index) {
-                return doc_index[layer_index]
-            }
+            return doc._layerOrderIndex[layer_index]
         }
     },
     /**
@@ -956,20 +965,18 @@ var Generator = {
      */
     layerGetNextLayer: function (layer) {
         if (layer) {
-            var doc_index = Generator._layerOrderIndex[layer._document.id]
-            if (doc_index) {
-                var layer_index = layer.index+1
-                // Generator.logDebug("layerGetNextLayer", "index=" + layer_index)
-                while (layer_index &lt; doc_index.length &amp;&amp; !doc_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
-                    // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
-                    layer_index++
-                }
-
-                if (doc_index[layer_index])
-                    return doc_index[layer_index]
-                else
-                    return layer // if no previous found, original was last
+            var order_index = layer._document._layerOrderIndex
+            var layer_index = layer.index+1
+            Generator.logDebug("layerGetNextLayer", "index=" + layer_index)
+            while (layer_index &lt; order_index.length &amp;&amp; !order_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
+                // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+                layer_index++
             }
+
+            if (order_index[layer_index])
+                return order_index[layer_index]
+            else
+                return null // if no previous found, original was last
         }
     },
     /**
@@ -982,20 +989,18 @@ var Generator = {
      */
     layerGetPreviousLayer: function (layer) {
         if (layer) {
-            var doc_index = Generator._layerOrderIndex[layer._document.id]
-            if (doc_index) {
-                var layer_index = layer.index-1
-                // Generator.logDebug("layerGetPreviousLayer", "index=" + layer_index)
-                while (layer_index >= 0 &amp;&amp; !doc_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
-                    // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
-                    layer_index--
-                }
-
-                if (doc_index[layer_index])
-                    return doc_index[layer_index]
-                else
-                    return layer // if no previous found, original was first
+            var order_index = layer._document._layerOrderIndex
+            var layer_index = layer.index-1
+            Generator.logDebug("layerGetPreviousLayer", "index=" + layer_index)
+            while (layer_index >= 0 &amp;&amp; !order_index[layer_index]) {  // index can have wholes since every group is a virtual layer that is not returned
+                layer_index--
+                Generator.logDebug("layerGetNextLayer", "next index=" + layer_index + ", depth="+Generator.layerGetDepth(order_index[layer_index]))
             }
+
+            if (order_index[layer_index])
+                return order_index[layer_index]
+            else
+                return null // if no previous found, original was first
         }
     },
     /**
@@ -1037,7 +1042,7 @@ var Generator = {
     layerGetByUid: function (layer_uid) {
         if (layer_uid) {
             // Generator.logDebug("layerGetByUid", "uid="+layer_uid)
-            return Generator._layerDataIndex[layer_uid]
+            return Generator._layerUidIndex[layer_uid]
         }
     },
     /**
@@ -1732,7 +1737,7 @@ var Generator = {
      */
     photoshopSetActiveDocument: function (id, callback, error) {
         var script = 
-        "var result='false', i=null, docs='[', delimerator='';\
+        "var result='false', i=null;\
         for (i = 0; i &lt; app.documents.length; i++) {\
             var d = app.documents[i];\
             if (d.id == '" + id + "') {\
@@ -2674,7 +2679,7 @@ var Generator = {
      * @memberof module:json
      */
     jsonEncode: function(obj_data, pretty_print, hide_prefix) {
-        if (!obj_data) {
+        if (!obj_data &amp;&amp; !obj_data === 0) {
             return ""
         } else {
             try {
@@ -2745,9 +2750,39 @@ var Generator = {
             }
         }
     },    
-    _layerUpdateOrderIndex: function (layer) {
-        var doc_index = Generator._layerOrderIndex[layer._document.id]
-        doc_index[layer.index] = layer
+    _printOrderIndex: function (index) {
+        var result = "["
+        for (var i=0; i&lt;index.length; i++)
+            if (index[i])
+                result += index[i].id + ' (' + index[i]._depth + '),'
+            else
+                result += '(null),'
+        return result.substring(0, result.length-1) + ']'
+    },
+    _generateOrderIndex: function (doc) {
+        var result = true
+        var order_index = []
+        for (var layer_id in doc._layerIdIndex) {
+            var layer = doc._layerIdIndex[layer_id]
+            result = result &amp;&amp; (!order_index[layer.index]) // sometimes photoshop misses index change event data resulting clash of indices -> refetch&amp;parse data
+            order_index[layer.index] = layer
+        }
+        var depth = 1
+        for (var i=0; i&lt;order_index.length; i++) {
+            var layer = order_index[i]
+            if (!layer) {
+                depth++
+            } else {
+                if (Generator.layerIsGroup(layer))
+                    depth--
+                layer._depth = depth
+            }
+            result = result &amp;&amp; (depth > 0)
+        }
+        doc._layerOrderIndex = order_index
+        
+        Generator.logDebug("_generateOrderIndex", "index="+Generator._printOrderIndex(order_index))
+        return result &amp;&amp; (depth == 1)
     },
     _parseDocumentData: function (data) {
         Generator.logDebug("_parseDocumentData", "id="+data.id) 
@@ -2757,12 +2792,13 @@ var Generator = {
         data._path = Generator.fileSanitizePath(data.file)
         data._url = "//"+data.name+"/"
         data._uid = Generator.layerCalculateUid(data.id, null)
+        data._depth = 0
         data._settings = Generator._layerGetPluginSettings(data, Generator._pluginid)
         data._children = []
-        data._deltas = {}
+        data._layerIdIndex = {}
+        // data._deltas = {}
         data._document = data // convenience to not have special treatment for doc
-        Generator._layerDataIndex[data.id] = data
-        Generator._layerOrderIndex[data.id] = []
+        Generator._layerUidIndex[data._uid] = data
         Generator._layerUrlIndex[data._url] = data
         Generator._documents[data.id] = data
 
@@ -2772,6 +2808,9 @@ var Generator = {
                 Generator._parseLayerData(data, data.layers[i], data)
             }
             delete data.layers
+        }
+        if (!Generator._generateOrderIndex(data)) {
+            Generator.logError("_parseDocumentData", "Unable to generate document order index, corrupt data!") // should not happen, when getting full data should be OK
         }
         Generator.logDebug("_parseDocumentData", "document="+Generator.jsonEncode(data, true, "_")) // print last so .layers converted to ._childrent that is not printed
         Generator._onDocumentUpdate(data) // trigger event downstream
@@ -2787,18 +2826,19 @@ var Generator = {
         layer._uid = Generator.layerCalculateUid(doc.id, layer.id)
         layer._document = doc
         layer._children = []
-        layer._deltas = {}
+        // layer._deltas = {}
         layer._url = parent._url + layer.name
+        layer._depth = parent._depth + 1
         layer._settings = Generator._layerGetPluginSettings(layer, Generator._pluginid)
         if (Generator.layerIsGroup(layer)) {
             layer._url = layer._url + "/"
         }
+        doc._layerIdIndex[layer.id] = layer
+
         Generator._addLayerChild(parent, layer)
 
         Generator._layerUrlIndex[layer._url] = layer
-        Generator._layerDataIndex[layer._uid] = layer
-        Generator._layerUpdateOrderIndex(layer)
-        Generator._layerOrderIndex[doc.id][layer.index] = layer
+        Generator._layerUidIndex[layer._uid] = layer
 		// Generator.logDebug("_parseLayerData", "layer_id="+layer._uid+", index="+layer.index)
 
         // ._url must be set calculation in children will go OK         
@@ -2836,23 +2876,30 @@ var Generator = {
                 }
                 delete delta.layers
             }
-            Generator._handlePhotoshopEvent("onDocumentChange", delta) 
+            if (!Generator._generateOrderIndex(doc)) {
+                Generator.logWarning("_parseDocumentData", "Unable to generate document order index, corrupt delta!") // sometimes photoshop skips index change events, we need to refetch&amp;parse document data
+                Generator.documentUpdate(delta.id)
+            } else {
+                Generator._handlePhotoshopEvent("onDocumentChange", delta)
+            }
         } else {
             Generator.logDebug("_parseDocumentChanges - doc not found!", "id="+delta.id) 
             Generator.documentUpdate(delta.id)
         }
     },
     _copyLayerChanges: function (layer, delta) {
-        var target = layer._deltas
+        var target = layer //._deltas 
         for (var id in delta) {
-            if (id != "layers" || id != "id") {
+            if (id == "layers" || id == "id") {
+                // id &amp; sublayers handled separately
+            } else {
                 // Generator.logDebug("_copyLayerChanges", "layer_id="+delta.id+", id="+id+", value="+delta[id])
                 target[id] = delta[id]
             }
         }
     },
     _parseLayerChanges: function (doc, delta) {
-        // Generator.logDebug("_parseLayerChanges", "doc="+doc.id+", id="+delta.id) 
+        Generator.logDebug("_parseLayerChanges", "doc="+doc.id+", id="+delta.id+", delta=\n"+Generator.jsonEncode(delta)) 
         delta.id = delta.id.toString()
         var layer = Generator.layerGetById(doc.id, delta.id)
         if (layer) {
@@ -2863,10 +2910,13 @@ var Generator = {
             }
             if (delta.layers) {
                 for (var i=0; i&lt;delta.layers.length; i++) {
-                    // Generator.logDebug("_parseLayerData", "layer_id="+delta._uid)
+                    // Generator.logDebug("_parseLayerChanges", "layer_id="+delta._uid)
                     Generator._parseLayerChanges(doc, delta.layers[i])
                 }
             }
+        } else {
+            Generator.logDebug("_parseLayerChanges - layer not found!", "id="+delta.id) 
+            Generator.documentUpdate(doc.id)
         }
     },
     _deleteLayerData: function (layer, recursive_call) {
@@ -2878,7 +2928,7 @@ var Generator = {
                 }
             }
             delete Generator._layerUrlIndex[layer._url]
-            delete Generator._layerDataIndex[layer._uid]
+            delete Generator._layerUidIndex[layer._uid]
 
             Generator._removeLayerChild(layer._parent, layer)
         }
