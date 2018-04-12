@@ -2734,22 +2734,22 @@ var Generator = {
     _generateOrderIndex: function (doc) {
         var result = true
         var order_index = []
-        for (var layer_id in doc._layerIdIndex) {
+        for (var layer_id in doc._layerIdIndex) { // iterate through layers and set them in the order index while maintaining there are no collisions
             var layer = doc._layerIdIndex[layer_id]
             result = result && (!order_index[layer.index]) // sometimes photoshop misses index change event data resulting clash of indices -> refetch&parse data
             order_index[layer.index] = layer
         }
         var depth = 1
-        for (var i=0; i<order_index.length; i++) {
+        for (var i=0; i<order_index.length; i++) { // iterate throught the index and calculate layer depth
             var layer = order_index[i]
-            if (!layer) {
+            if (!layer) { // null means end of group, i.e. next layer is a child of a group on current level
                 depth++
             } else {
-                if (Generator.layerIsGroup(layer))
+                if (Generator.layerIsGroup(layer)) // once we hit a group, next layer is on level below
                     depth--
                 layer._depth = depth
             }
-            result = result && (depth > 0)
+            result = result && (depth > 0) // we should never hit 0
         }
         doc._layerOrderIndex = order_index
         
