@@ -41,6 +41,10 @@ There is sample Generator plugin about using photoshop-generator-core that enabl
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
 
 ## Changelog
+### v4.3.0
+- Added option count to layerGetNextLayer/layerGetPreviousLayer
+- Added new method documentGetSelectedLayers for getting a collection of selected layers
+
 ### v4.2.2
 - Fixed layer order management. Photoshop sometimes skips index change events and its detected and document data refetched when it happens
 - Added layerGetDepth

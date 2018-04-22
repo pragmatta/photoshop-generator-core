@@ -19,7 +19,8 @@ var Generator = {
     _layerUidIndex: {},
     _layerUrlIndex: {},
     _layerSettingsData: {},
-    _selectedLayer: {},
+    _activeLayer: {},
+    _selectedLayers: {},
     _documentUpdatePending: {},
     _serverHandlers: {},
     _serverRequestBody: "",
@@ -92,20 +93,32 @@ var Generator = {
     _onDocumentChange: function (data) { 
         Generator._parseDocumentChanges(data)
     },
-    _onSelectionChange: function (doc_id, selection) {
+    _onSelectionChange: function (doc_id, selected_layers) {
         if (doc_id) {
-            // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", selection="+selection)
-            var previous_selection = Generator._selectedLayer[doc_id]
-            if (selection && selection.length === 1) {
-                Generator._selectedLayer[doc_id] = selection[0]
+            // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", selected_layers="+selected_layers)
+            var previous_active_layer = Generator._activeLayer[doc_id]
+            var previous_selected_layers = Generator._selectedLayers[doc_id]
+            // Generator.logDebug("_onSelectionChange", "previous_active_layer="+previous_active_layer+", previous_selected_layers="+previous_selected_layers)
+            var active_layer = null
+            if (selected_layers.length === 1) {
+                active_layer = selected_layers[0]
             } else {
-                Generator._selectedLayer[doc_id] = null
+                if (previous_selected_layers)
+                    for (var i=0; i<selected_layers.length; i++)
+                        if (previous_selected_layers.indexOf(selected_layers[i])<0) {
+                            active_layer = selected_layers[i]
+                            // Generator.logDebug("_onSelectionChange", "layer that was not previously selected="+active_layer)
+                        }
+                if ((active_layer == null) && (selected_layers.length > 0)) 
+                    active_layer = selected_layers[selected_layers.length-1] // if multiple options, use highest
             }
-            if (Generator._selectedLayer[doc_id] != previous_selection) {
-                Generator._handlePhotoshopEvent("onSelectionChange", Generator._selectedLayer[doc_id]) 
-                // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", selection="+Generator._selectedLayer[doc_id])
+            Generator._activeLayer[doc_id] = active_layer
+            Generator._selectedLayers[doc_id] = selected_layers
+            if (active_layer != previous_active_layer) {
+                // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", active_layer="+active_layer+", selected_layers="+selected_layers)
+                Generator._handlePhotoshopEvent("onSelectionChange", active_layer, selected_layers) 
             }
-            // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", selected_doc="+Generator._selectedDocument+", new_selected="+Generator._selectedLayer[doc_id])
+            // Generator.logDebug("_onSelectionChange", "doc="+doc_id+", selected_doc="+Generator._selectedDocument+", new_selected="+Generator._activeLayer[doc_id])
         }
     },
     _onIdle: function (data) { 
@@ -929,20 +942,28 @@ var Generator = {
     },
     /**
      * Get the next layer from the given layer, same layer if the last layer of the document
+     *
      * @param {Object} layer reference layer
+     * @param {Integer} count how many layers to step, default 1
      *
      * @return {Object}
      *
      * @memberof module:layer
      */
-    layerGetNextLayer: function (layer) {
+    layerGetNextLayer: function (layer, count) {
         if (layer) {
+            if (!count)
+                count = 1
             var order_index = layer._document._layerOrderIndex
-            var layer_index = layer.index+1
-            Generator.logDebug("layerGetNextLayer", "index=" + layer_index)
-            while (layer_index < order_index.length && !order_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
-                // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+            var layer_index = layer.index
+            while (layer_index < order_index.length-1 && count > 0) {
                 layer_index++
+                Generator.logDebug("layerGetNextLayer", "index=" + layer_index + ", count="+count)
+                while (layer_index < order_index.length && !order_index[layer_index]) { // index can have wholes since every group is a virtual layer that is not returned
+                    // Generator.logDebug("layerGetNextLayer", "next index=" + layer_index)
+                    layer_index++
+                }
+                count--
             }
 
             if (order_index[layer_index])
@@ -953,20 +974,29 @@ var Generator = {
     },
     /**
      * Get the previous layer from the given layer, same layer if the first layer of the document
+     *
      * @param {Object} layer reference layer
+     * @param {Integer} count how many layers to step, default 1
      *
      * @return {Object}
      *
      * @memberof module:layer
      */
-    layerGetPreviousLayer: function (layer) {
+    layerGetPreviousLayer: function (layer, count) {
         if (layer) {
+            if (!count)
+                count = 1
+            Generator.logDebug("layerGetPreviousLayer", "count=" + count)
             var order_index = layer._document._layerOrderIndex
-            var layer_index = layer.index-1
-            Generator.logDebug("layerGetPreviousLayer", "index=" + layer_index)
-            while (layer_index >= 0 && !order_index[layer_index]) {  // index can have wholes since every group is a virtual layer that is not returned
+            var layer_index = layer.index
+            while (layer_index > 0 && count > 0) {
                 layer_index--
-                Generator.logDebug("layerGetNextLayer", "next index=" + layer_index + ", depth="+Generator.layerGetDepth(order_index[layer_index]))
+                Generator.logDebug("layerGetPreviousLayer", "index=" + layer_index)
+                while (layer_index >= 0 && !order_index[layer_index]) {  // index can have wholes since every group is a virtual layer that is not returned
+                    layer_index--
+                    Generator.logDebug("layerGetNextLayer", "next index=" + layer_index + ", depth="+Generator.layerGetDepth(order_index[layer_index]))
+                }
+                count--
             }
 
             if (order_index[layer_index])
@@ -1294,6 +1324,34 @@ var Generator = {
      * @module document
      */
     /**
+     * Get the active layer of a document following logic
+     * - If there is only one selected layer it is the active
+     * - Else if only one new layer selected it is the active
+     * - Else if multiple new layers then one with highest index is active
+     * - Else the selected layer with highest index is active
+     *
+     * @param {Object} doc document-object
+     * @return {Object} 
+     *
+     * @memberof module:document
+     */
+    documentGetSelectedLayers: function (doc) {
+        if (!doc) {
+            doc = Generator.documentGetActive()
+        }
+        if (doc) {
+            var selected_layers = Generator._selectedLayers[doc.id]
+            var result = []
+            for (var i=0; i<selected_layers.length; i++)
+                result[i] = Generator.layerGetByIndex(doc.id, selected_layers[i])
+            // Generator.logDebug("documentGetActiveLayer", "doc=" + doc.id+", selected_layer="+Generator._activeLayer[doc.id])
+            return result
+        }
+    },
+    /**
+     * @module document
+     */
+    /**
      * Get the selected layer of a document
      * @param {Object} doc document-object
      * @return {Object} 
@@ -1305,8 +1363,8 @@ var Generator = {
             doc = Generator.documentGetActive()
         }
         if (doc) {
-            // Generator.logDebug("documentGetActiveLayer", "doc=" + doc.id+", selected_layer="+Generator._selectedLayer[doc.id])
-            return Generator.layerGetByIndex(doc.id, Generator._selectedLayer[doc.id])
+            // Generator.logDebug("documentGetActiveLayer", "doc=" + doc.id+", selected_layer="+Generator._activeLayer[doc.id])
+            return Generator.layerGetByIndex(doc.id, Generator._activeLayer[doc.id])
         }
     },
     /**
