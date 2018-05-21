@@ -1389,6 +1389,16 @@ var Generator = {
         return result
     },
     /**
+     * Get the number of open documents
+     *
+     * @return {int}
+     *
+     * @memberof module:document
+     */
+    documentCount: function () {
+        return Generator._documents.length
+    },
+    /**
      * Get all current documents
      *
      * @return {Object[]}

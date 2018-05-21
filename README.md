@@ -41,6 +41,9 @@ There is sample Generator plugin about using photoshop-generator-core that enabl
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
 
 ## Changelog
+### v4.4.0
+- Added new method documentCount for getting the document count
+
 ### v4.3.0
 - Added option count to layerGetNextLayer/layerGetPreviousLayer
 - Added new method documentGetSelectedLayers for getting a collection of selected layers
