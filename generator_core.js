@@ -2836,6 +2836,7 @@ var Generator = {
         data._settings = Generator._layerGetPluginSettings(data, Generator._pluginid)
         data._children = []
         data._layerIdIndex = {}
+        data._isDirty = false
         // data._deltas = {}
         data._document = data // convenience to not have special treatment for doc
         Generator._layerUidIndex[data._uid] = data
@@ -2918,23 +2919,54 @@ var Generator = {
             }
             if (!Generator._generateOrderIndex(doc)) {
                 Generator.logWarning("_parseDocumentData", "Unable to generate document order index, corrupt delta!") // sometimes photoshop skips index change events, we need to refetch&parse document data
-                Generator.documentUpdate(delta.id)
-            } else {
-                Generator._handlePhotoshopEvent("onDocumentChange", delta)
+                doc._isDirty = true
             }
+            if (doc._isDirty)
+                Generator.documentUpdate(doc.id)
+            else
+                Generator._handlePhotoshopEvent("onDocumentChange", delta)
         } else {
             Generator.logDebug("_parseDocumentChanges - doc not found!", "id="+delta.id) 
             Generator.documentUpdate(delta.id)
         }
     },
+    _copyObjectProperties: function (target, source) {
+        for (var id in source) {
+            var source_value = source[id]
+            if (typeof source_value == 'object') {
+                Generator._copyObjectProperties(target[id], source_value)
+                
+            } else {
+                // Generator.logDebug("_copyObjectProperties", "id="+id+", value="+source_value)
+                target[id] = source_value
+            }
+        }
+    },
     _copyLayerChanges: function (layer, delta) {
-        var target = layer //._deltas 
         for (var id in delta) {
+            var delta_value = delta[id]
             if (id == "layers" || id == "id") {
                 // id & sublayers handled separately
+
+            } else if (!delta_value) {
+                Generator.logError("_copyLayerChanges", "Received null delta value")
+                layer._document._isDirty = true
+
+            } else if (typeof delta_value == 'object') {
+                var layer_value = layer[id]
+                if (!layer_value) {
+                    layer[id] = delta_value // sometimes deltas include extra info, just copy those as is 
+
+                } else if (typeof layer_value != 'object') {
+                    Generator.logError("_copyLayerChanges", "Received delta with object value (" + Generator.jsonEncode(delta_value) + ") with non-object layer data (" + layer_value + ")")
+                    layer._document._isDirty = true
+                } else {
+                    Generator._copyObjectProperties(layer_value, delta_value)
+                }
+                
             } else {
-                // Generator.logDebug("_copyLayerChanges", "layer_id="+delta.id+", id="+id+", value="+delta[id])
-                target[id] = delta[id]
+                // Generator.logDebug("_copyLayerChanges", "layer_id="+delta.id+", id="+id+", value="+delta_value)
+                layer[id] = delta_value
             }
         }
     },
@@ -2942,7 +2974,12 @@ var Generator = {
         Generator.logDebug("_parseLayerChanges", "doc="+doc.id+", id="+delta.id+", delta=\n"+Generator.jsonEncode(delta)) 
         delta.id = delta.id.toString()
         var layer = Generator.layerGetById(doc.id, delta.id)
-        if (layer) {
+        if (!layer) {
+            Generator.logDebug("_parseLayerChanges - layer not found!", "id="+delta.id) 
+            Generator.documentUpdate(doc.id)
+        } else if (Generator.deltaRemoved(layer, delta)) {
+            Generator._deleteLayerData(layer, true)
+        } else {
             Generator._copyLayerChanges(layer, delta)
             if (Generator.deltaPreferencesChanged(layer, delta)) {
                 layer._settings = Generator._layerGetPluginSettings(delta, Generator._pluginid)
@@ -2954,9 +2991,6 @@ var Generator = {
                     Generator._parseLayerChanges(doc, delta.layers[i])
                 }
             }
-        } else {
-            Generator.logDebug("_parseLayerChanges - layer not found!", "id="+delta.id) 
-            Generator.documentUpdate(doc.id)
         }
     },
     _deleteLayerData: function (layer, recursive_call) {
