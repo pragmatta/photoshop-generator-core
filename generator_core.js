@@ -2976,7 +2976,7 @@ var Generator = {
         var layer = Generator.layerGetById(doc.id, delta.id)
         if (!layer) {
             Generator.logDebug("_parseLayerChanges - layer not found!", "id="+delta.id) 
-            Generator.documentUpdate(doc.id)
+            doc._isDirty = true
         } else if (Generator.deltaRemoved(layer, delta)) {
             Generator._deleteLayerData(layer, true)
         } else {
