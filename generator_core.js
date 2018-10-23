@@ -2932,13 +2932,16 @@ var Generator = {
     },
     _copyObjectProperties: function (target, source) {
         for (var id in source) {
-            var source_value = source[id]
-            if (typeof source_value == 'object') {
-                Generator._copyObjectProperties(target[id], source_value)
-                
-            } else {
-                // Generator.logDebug("_copyObjectProperties", "id="+id+", value="+source_value)
-                target[id] = source_value
+            if (source.hasOwnProperty(id)) {
+                var source_value = source[id]
+                var target_value = target[id]
+                if ((typeof source_value == 'object') && target_value && (typeof target_value == 'object')) {
+                    Generator._copyObjectProperties(target_value, source_value)
+                    
+                } else {
+                    // Generator.logDebug("_copyObjectProperties", "id="+id+", value="+source_value)
+                    target[id] = source_value
+                }
             }
         }
     },
@@ -2955,6 +2958,7 @@ var Generator = {
             } else if (typeof delta_value == 'object') {
                 var layer_value = layer[id]
                 if (!layer_value) {
+                    // Generator.logDebug("_copyLayerChanges", "new value id="+id+", value="+delta_value)
                     layer[id] = delta_value // sometimes deltas include extra info, just copy those as is 
 
                 } else if (typeof layer_value != 'object') {
@@ -2965,7 +2969,7 @@ var Generator = {
                 }
                 
             } else {
-                // Generator.logDebug("_copyLayerChanges", "layer_id="+delta.id+", id="+id+", value="+delta_value)
+                Generator.logDebug("_copyLayerChanges", "layer_id="+delta.id+", id="+id+", value="+delta_value)
                 layer[id] = delta_value
             }
         }

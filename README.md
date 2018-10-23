@@ -41,7 +41,7 @@ There is sample Generator plugin about using photoshop-generator-core that enabl
 - NPM: https://www.npmjs.com/package/photoshop-generator-sample
 
 ## Changelog
-### v4.4.2
+### v4.4.3
 - Fixed layer deletion not removing the data
 - Fixed some changes in document corrupting original data
 - Added new method documentCount for getting the document count
