@@ -11,10 +11,10 @@
 	"license": "BSD-2-Clause",
 	"repository" : {
 		"type" : "git",
-		"url" : "https://github.com/RationalMatta/photoshop-generator-core"
+		"url" : "https://github.com/pragmatta/photoshop-generator-core"
 	},
 	"bugs": {
-		"url" : "https://github.com/RationalMatta/photoshop-generator-core/issues",
+		"url" : "https://github.com/pragmatta/photoshop-generator-core/issues",
 		"email" : "github@rational.zone"
 	},
 	"dependencies" : { 
